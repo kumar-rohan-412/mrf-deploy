@@ -7,7 +7,6 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
-from huggingface_hub import snapshot_download
 import numpy as np
 import pickle
 import torch
@@ -50,10 +49,9 @@ with open(PA_PATH, 'rb') as f:
 # ── LOAD BERT FROM HF HUB ─────────────────────────────────
 print("Downloading BERT model from HF Hub...")
 device    = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-BERT_DIR  = snapshot_download(repo_id="darc412/mrf-bert-model")
 
-bert_tokenizer = BertTokenizer.from_pretrained(BERT_DIR, local_files_only=True)
-bert_model     = BertForSequenceClassification.from_pretrained(BERT_DIR, local_files_only=True)
+bert_tokenizer = BertTokenizer.from_pretrained("darc412/mrf-bert-model")
+bert_model     = BertForSequenceClassification.from_pretrained("darc412/mrf-bert-model")
 bert_model     = bert_model.to(device)
 bert_model.eval()
 print(f"All models loaded! Device: {device}")
