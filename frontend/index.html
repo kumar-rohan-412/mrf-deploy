@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Security: CSP ── -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 style-src  'self' https://fonts.googleapis.com 'unsafe-inline';
+                 font-src   https://fonts.gstatic.com;
+                 script-src 'self' 'unsafe-inline';
+                 connect-src http://127.0.0.1:8000;
+                 img-src 'self' data:;
+                 object-src 'none';
+                 base-uri   'none';" />
+
+  <!-- ── Security: Anti-clickjacking / sniffing ── -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options"        content="DENY" />
+  <meta http-equiv="Referrer-Policy"        content="no-referrer" />
+
+  <!-- ── SEO: prevent indexing — restricted LEA tool ── -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+
+  <title>Misinformation Resilience Framework</title>
+
+  <!-- ── Preconnect for font performance ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com"   crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap"
+        rel="stylesheet" />
+
+  <style>
+    /* ─────────────────────── DESIGN TOKENS ─────────────────────── */
+    :root {
+      --bg:       #080c10;
+      --surface:  #0d1117;
+      --surface2: #131920;
+      --border:   #1e2d3d;
+      --accent:   #00d4ff;
+      --accent2:  #0066ff;
+      --danger:   #ff3c5a;
+      --success:  #00e896;
+      --warning:  #ffb800;
+      --text:     #e8edf2;
+      --muted:    #556070;
+      --mono:     'Space Mono', monospace;
+      --sans:     'Syne', sans-serif;
+
+      /* A11y: honour reduced-motion preference */
+      --transition-speed: 0.2s;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ── Reduced-motion: disable animations system-wide ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration:   0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration:  0.01ms !important;
+      }
+    }
+
+    body {
+      background:   var(--bg);
+      color:        var(--text);
+      font-family:  var(--sans);
+      min-height:   100vh;
+      overflow-x:   hidden;
+      /* A11y: prevent tiny default font-size issues */
+      font-size:    100%;
+      line-height:  1.5;
+      -webkit-font-smoothing:  antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+      /* Perf: keep on GPU layer */
+      will-change: transform;
+    }
+
+    /* ─────────────────────── LAYOUT ─────────────────────── */
+    .container {
+      max-width: 900px;
+      margin:    0 auto;
+      padding:   40px 24px 80px;
+      position:  relative;
+      z-index:   1;
+    }
+
+    /* ─────────────────────── HEADER ─────────────────────── */
+    .header {
+      text-align:    center;
+      margin-bottom: 48px;
+      animation:     fadeDown 0.8s ease both;
+    }
+
+    .header-badge {
+      display:     inline-flex;
+      align-items: center;
+      gap:         8px;
+      background:  rgba(0,212,255,0.08);
+      border:      1px solid rgba(0,212,255,0.2);
+      border-radius: 100px;
+      padding:     6px 16px;
+      font-family: var(--mono);
+      font-size:   11px;
+      color:       var(--accent);
+      letter-spacing: 0.1em;
+      margin-bottom:  20px;
+    }
+
+    .header-badge::before {
+      content:       '';
+      width:         6px;
+      height:        6px;
+      background:    var(--accent);
+      border-radius: 50%;
+      animation:     pulse 2s infinite;
+      /* A11y: decorative only */
+      aria-hidden: true;
+    }
+
+    h1 {
+      font-size:   clamp(28px, 5vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background:  linear-gradient(135deg, #e8edf2 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      color:          var(--muted);
+      font-size:      15px;
+      font-family:    var(--mono);
+      letter-spacing: 0.05em;
+    }
+
+    /* ─────────────────────── INPUT CARD ─────────────────────── */
+    .input-card {
+      background:    var(--surface);
+      border:        1px solid var(--border);
+      border-radius: 16px;
+      padding:       28px;
+      margin-bottom: 24px;
+      animation:     fadeUp 0.8s 0.2s ease both;
+      position:      relative;
+      overflow:      hidden;
+    }
+
+    .input-card::before {
+      content:    '';
+      position:   absolute;
+      top: 0; left: 0; right: 0;
+      height:     1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity:    0.4;
+      pointer-events: none;
+    }
+
+    /* A11y: label is now a real <label> in the HTML */
+    .input-label {
+      font-family:    var(--mono);
+      font-size:      11px;
+      color:          var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom:  12px;
+      display:        flex;
+      align-items:    center;
+      gap:            8px;
+    }
+
+    .input-label::before {
+      content: '//';
+      opacity: 0.5;
+      /* decorative */
+      aria-hidden: true;
+    }
+
+    textarea {
+      width:         100%;
+      background:    var(--surface2);
+      border:        1px solid var(--border);
+      border-radius: 10px;
+      color:         var(--text);
+      font-family:   var(--mono);
+      font-size:     14px;
+      line-height:   1.7;
+      padding:       16px;
+      resize:        vertical;          /* allow vertical only, not horizontal (avoids layout break) */
+      outline:       none;
+      transition:    border-color var(--transition-speed),
+                     box-shadow   var(--transition-speed);
+      min-height:    140px;
+      max-height:    400px;             /* prevent runaway resize */
+      /* Accessibility */
+      display:       block;
+    }
+
+    textarea::placeholder { color: var(--muted); }
+
+    textarea:focus {
+      border-color: rgba(0,212,255,0.4);
+      box-shadow:   0 0 0 3px rgba(0,212,255,0.06);
+    }
+
+    /* Visible focus ring for keyboard users */
+    textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .input-footer {
+      display:         flex;
+      justify-content: space-between;
+      align-items:     center;
+      margin-top:      16px;
+      gap:             12px;
+      flex-wrap:       wrap;
+    }
+
+    .char-count {
+      font-family: var(--mono);
+      font-size:   12px;
+      color:       var(--muted);
+    }
+
+    /* Warning colour when near limit */
+    .char-count.warn { color: var(--warning); }
+    .char-count.over { color: var(--danger);  }
+
+    /* ─────────────────────── BUTTON ─────────────────────── */
+    .btn-analyse {
+      background:     linear-gradient(135deg, var(--accent2), var(--accent));
+      border:         none;
+      border-radius:  10px;
+      color:          #fff;
+      font-family:    var(--sans);
+      font-size:      15px;
+      font-weight:    700;
+      padding:        12px 32px;
+      cursor:         pointer;
+      transition:     transform    0.15s,
+                      box-shadow   0.15s,
+                      opacity      0.15s;
+      letter-spacing: 0.02em;
+      display:        flex;
+      align-items:    center;
+      gap:            8px;
+      /* A11y */
+      position:       relative;
+    }
+
+    .btn-analyse:hover:not(:disabled) {
+      transform:  translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,212,255,0.25);
+    }
+
+    .btn-analyse:active:not(:disabled) { transform: scale(0.98); }
+
+    .btn-analyse:disabled {
+      opacity:   0.5;
+      cursor:    not-allowed;
+      transform: none;
+    }
+
+    /* Visible focus ring */
+    .btn-analyse:focus-visible {
+      outline:        2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .btn-analyse .arrow { transition: transform 0.2s; }
+    .btn-analyse:hover:not(:disabled) .arrow { transform: translateX(3px); }
+
+    /* ─────────────────────── LOADING ─────────────────────── */
+    /* Use hidden attribute + display:none so SR announces correctly */
+    .loading {
+      display:    none;
+      text-align: center;
+      padding:    40px;
+      animation:  fadeUp 0.4s ease both;
+    }
+
+    .loading.active { display: block; }
+
+    .spinner {
+      width:         40px;
+      height:        40px;
+      border:        2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin:        0 auto 16px;
+      animation:     spin 0.8s linear infinite;
+    }
+
+    .loading-text {
+      font-family: var(--mono);
+      font-size:   13px;
+      color:       var(--muted);
+    }
+
+    .loading-steps {
+      margin-top:      12px;
+      display:         flex;
+      justify-content: center;
+      gap:             6px;
+    }
+
+    .step-dot {
+      width:         6px;
+      height:        6px;
+      border-radius: 50%;
+      background:    var(--border);
+      animation:     stepAnim 1.2s infinite;
+    }
+
+    .step-dot:nth-child(2) { animation-delay: 0.2s; }
+    .step-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* ─────────────────────── RESULTS ─────────────────────── */
+    .results { display: none; animation: fadeUp 0.5s ease both; }
+    .results.active { display: block; }
+
+    /* ── Verdict card ── */
+    .verdict-card {
+      border-radius: 16px;
+      padding:       32px;
+      margin-bottom: 20px;
+      border:        1px solid;
+      position:      relative;
+      overflow:      hidden;
+    }
+
+    .verdict-card.fake {
+      background:   rgba(255,60,90,0.06);
+      border-color: rgba(255,60,90,0.25);
+    }
+
+    .verdict-card.real {
+      background:   rgba(0,232,150,0.06);
+      border-color: rgba(0,232,150,0.25);
+    }
+
+    .verdict-card::after {
+      content:       '';
+      position:      absolute;
+      top: -40px; right: -40px;
+      width:         160px;
+      height:        160px;
+      border-radius: 50%;
+      opacity:       0.06;
+      pointer-events: none;
+    }
+
+    .verdict-card.fake::after { background: var(--danger);  }
+    .verdict-card.real::after { background: var(--success); }
+
+    .verdict-header {
+      display:     flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap:   wrap;
+      gap:         12px;
+    }
+
+    .verdict-label {
+      font-family:    var(--mono);
+      font-size:      11px;
+      letter-spacing: 0.12em;
+      color:          var(--muted);
+      text-transform: uppercase;
+      margin-bottom:  6px;
+    }
+
+    .verdict-text {
+      font-size:      42px;
+      font-weight:    800;
+      letter-spacing: -0.02em;
+      line-height:    1;
+    }
+
+    .verdict-card.fake .verdict-text { color: var(--danger);  }
+    .verdict-card.real .verdict-text { color: var(--success); }
+
+    .confidence-badge { text-align: right; }
+
+    .confidence-number {
+      font-size:   36px;
+      font-weight: 800;
+      font-family: var(--mono);
+      line-height: 1;
+    }
+
+    .verdict-card.fake .confidence-number { color: var(--danger);  }
+    .verdict-card.real .confidence-number { color: var(--success); }
+
+    .confidence-label {
+      font-family:    var(--mono);
+      font-size:      11px;
+      color:          var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top:     4px;
+    }
+
+    /* ── Confidence bar ── */
+    .conf-bar-wrap {
+      background:    rgba(255,255,255,0.06);
+      border-radius: 100px;
+      height:        8px;
+      overflow:      hidden;
+      margin-top:    4px;
+    }
+
+    .conf-bar-fill {
+      height:        100%;
+      border-radius: 100px;
+      transition:    width 1s cubic-bezier(0.4,0,0.2,1);
+      width:         0%;
+      will-change:   width;
+    }
+
+    .verdict-card.fake .conf-bar-fill {
+      background: linear-gradient(90deg, #ff3c5a, #ff6b35);
+    }
+
+    .verdict-card.real .conf-bar-fill {
+      background: linear-gradient(90deg, #00e896, #00d4ff);
+    }
+
+    /* ── Analysed text ── */
+    .analysed-text {
+      margin-top:    16px;
+      font-family:   var(--mono);
+      font-size:     12px;
+      color:         var(--muted);
+      padding:       10px 14px;
+      background:    rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border-left:   3px solid;
+      line-height:   1.6;
+      /* Prevent long words breaking layout */
+      word-break:    break-word;
+      overflow-wrap: break-word;
+    }
+
+    .verdict-card.fake .analysed-text { border-color: var(--danger);  }
+    .verdict-card.real .analysed-text { border-color: var(--success); }
+
+    /* ─────────────────────── MODELS GRID ─────────────────────── */
+    .section-title {
+      font-family:    var(--mono);
+      font-size:      11px;
+      color:          var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom:  14px;
+      display:        flex;
+      align-items:    center;
+      gap:            8px;
+    }
+
+    .section-title::before {
+      content: '//';
+      opacity: 0.5;
+    }
+
+    .models-grid {
+      display:               grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:                   14px;
+      margin-bottom:         20px;
+    }
+
+    @media (max-width: 600px) {
+      .models-grid { grid-template-columns: 1fr; }
+    }
+
+    .model-card {
+      background:    var(--surface);
+      border:        1px solid var(--border);
+      border-radius: 12px;
+      padding:       18px;
+      transition:    border-color var(--transition-speed);
+    }
+
+    .model-card:hover { border-color: rgba(0,212,255,0.25); }
+
+    .model-name {
+      font-family:    var(--mono);
+      font-size:      11px;
+      color:          var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom:  10px;
+    }
+
+    .model-result {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      margin-bottom:   10px;
+    }
+
+    .model-verdict {
+      font-size:      18px;
+      font-weight:    700;
+      letter-spacing: 0.04em;
+    }
+
+    .model-verdict.fake { color: var(--danger);  }
+    .model-verdict.real { color: var(--success); }
+
+    .model-conf {
+      font-family: var(--mono);
+      font-size:   13px;
+      color:       var(--muted);
+    }
+
+    .model-bar-wrap {
+      background:    rgba(255,255,255,0.06);
+      border-radius: 100px;
+      height:        4px;
+      overflow:      hidden;
+    }
+
+    .model-bar-fill {
+      height:        100%;
+      border-radius: 100px;
+      transition:    width 1.2s cubic-bezier(0.4,0,0.2,1);
+      width:         0%;
+      will-change:   width;
+    }
+
+    .model-bar-fill.fake { background: var(--danger);  }
+    .model-bar-fill.real { background: var(--success); }
+
+    /* ─────────────────────── ERROR CARD ─────────────────────── */
+    .error-card {
+      display:       none;
+      background:    rgba(255,60,90,0.08);
+      border:        1px solid rgba(255,60,90,0.25);
+      border-radius: 12px;
+      padding:       20px 24px;
+      font-family:   var(--mono);
+      font-size:     13px;
+      color:         var(--danger);
+      margin-bottom: 20px;
+      animation:     fadeUp 0.4s ease both;
+      word-break:    break-word;
+    }
+
+    .error-card.active { display: block; }
+
+    /* ─────────────────────── FOOTER ─────────────────────── */
+    .footer {
+      text-align:     center;
+      margin-top:     48px;
+      font-family:    var(--mono);
+      font-size:      11px;
+      color:          var(--muted);
+      letter-spacing: 0.06em;
+      animation:      fadeUp 0.8s 0.4s ease both;
+    }
+
+    /* ─────────────────────── ANIMATIONS ─────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0);     }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1;   }
+      50%       { opacity: 0.3; }
+    }
+
+    @keyframes stepAnim {
+      0%, 100% { background: var(--border); }
+      50%       { background: var(--accent); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── Header ── -->
+  <header class="header" role="banner">
+    <div class="header-badge" aria-label="Project by DarcKnight">DarcKnight 💀</div>
+    <h1>Misinformation Resilience Framework</h1>
+    <p class="subtitle">AI-powered Fake News Detection for Social Media Platforms</p>
+  </header>
+
+  <!-- ── Input Card ── -->
+  <main>
+    <div class="input-card" role="region" aria-label="Text analysis input">
+
+      <!-- A11y: proper <label> linked to textarea via for/id -->
+      <label class="input-label" for="inputText">Input text for analysis</label>
+
+      <textarea
+        id="inputText"
+        name="inputText"
+        placeholder="Paste a news headline, article, or any text to analyse for misinformation…"
+        maxlength="2000"
+        rows="6"
+        aria-describedby="charCount charHint"
+        spellcheck="true"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+
+      <div class="input-footer">
+        <!-- Live region so screen readers announce char-count updates -->
+        <span class="char-count" id="charCount" aria-live="polite" aria-atomic="true">
+          <span id="charNum">0</span> / 2000 characters
+        </span>
+        <span id="charHint" class="sr-only">Maximum 2000 characters. Press Ctrl+Enter to analyse.</span>
+
+        <button
+          class="btn-analyse"
+          id="analyseBtn"
+          type="button"
+          aria-label="Analyse text for misinformation"
+        >
+          Analyse <span class="arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Error ── -->
+    <div
+      class="error-card"
+      id="errorCard"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
+
+    <!-- ── Loading ── -->
+    <div
+      class="loading"
+      id="loading"
+      role="status"
+      aria-live="polite"
+      aria-label="Analysing text, please wait"
+    >
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loading-text">Running inference across all models</div>
+      <div class="loading-steps" aria-hidden="true">
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+    </div>
+
+    <!-- ── Results ── -->
+    <section
+      class="results"
+      id="results"
+      role="region"
+      aria-label="Analysis results"
+      aria-live="polite"
+    >
+
+      <!-- Verdict -->
+      <div class="verdict-card" id="verdictCard">
+        <div class="verdict-header">
+          <div>
+            <div class="verdict-label">Primary verdict · BERT Model</div>
+            <div class="verdict-text" id="verdictText" aria-live="polite">—</div>
+          </div>
+          <div class="confidence-badge">
+            <div class="confidence-number" id="confNumber" aria-live="polite">—</div>
+            <div class="confidence-label">Confidence</div>
+          </div>
+        </div>
+
+        <!-- A11y: progressbar for confidence bar -->
+        <div
+          class="conf-bar-wrap"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-label="Confidence level"
+          id="confBarWrap"
+        >
+          <div class="conf-bar-fill" id="confBar"></div>
+        </div>
+
+        <div class="analysed-text" id="analysedText"></div>
+      </div>
+
+      <!-- Model comparison -->
+      <div class="section-title" aria-hidden="true">All model predictions</div>
+      <h2 class="sr-only">All model predictions</h2>
+      <div class="models-grid" id="modelsGrid" role="list"></div>
+
+    </section>
+  </main><!-- /main -->
+
+  <!-- ── Footer ── -->
+  <footer class="footer" role="contentinfo">
+    <strong>Let Other's Follow What Spreads &nbsp;·&nbsp; You Uncover The Truth</strong>
+  </footer>
+
+</div><!-- /container -->
+
+<!-- ── Screen-reader only utility ── -->
+<style>
+  .sr-only {
+    position:  absolute;
+    width:     1px;
+    height:    1px;
+    padding:   0;
+    margin:    -1px;
+    overflow:  hidden;
+    clip:      rect(0,0,0,0);
+    white-space: nowrap;
+    border:    0;
+  }
+</style>
+
+<script>
+  /* ─────────────────────────────────────────────────────────────
+     CONSTANTS
+  ───────────────────────────────────────────────────────────── */
+  const API_URL    = 'http://127.0.0.1:8000/predict';
+  const MAX_CHARS  = 2000;
+  const MIN_CHARS  = 10;
+  const WARN_THRESHOLD = 1800; // 90 % of max
+
+  // Allowlist of model keys to prevent prototype-pollution attacks on display
+  const MODEL_LABELS = Object.freeze({
+    bert:                'BERT Transformer',
+    logistic_regression: 'Logistic Regression',
+    random_forest:       'Random Forest',
+    passive_aggressive:  'Passive Aggressive',
+  });
+
+  // Allowlist of valid prediction values
+  const VALID_PREDICTIONS = new Set(['FAKE', 'REAL']);
+
+  /* ─────────────────────────────────────────────────────────────
+     ELEMENT REFS  (cached once; avoids repeated DOM queries)
+  ───────────────────────────────────────────────────────────── */
+  const elInput      = document.getElementById('inputText');
+  const elCharNum    = document.getElementById('charNum');
+  const elCharCount  = document.getElementById('charCount');
+  const elAnalyseBtn = document.getElementById('analyseBtn');
+  const elError      = document.getElementById('errorCard');
+  const elLoading    = document.getElementById('loading');
+  const elResults    = document.getElementById('results');
+  const elVerdictCard= document.getElementById('verdictCard');
+  const elVerdictText= document.getElementById('verdictText');
+  const elConfNumber = document.getElementById('confNumber');
+  const elConfBar    = document.getElementById('confBar');
+  const elConfBarWrap= document.getElementById('confBarWrap');
+  const elAnalysedTxt= document.getElementById('analysedText');
+  const elModelsGrid = document.getElementById('modelsGrid');
+
+  /* ─────────────────────────────────────────────────────────────
+     SANITISATION HELPER
+     Encodes every piece of user-/API-derived text before it
+     touches the DOM — prevents XSS regardless of source.
+  ───────────────────────────────────────────────────────────── */
+  function sanitise(str) {
+    if (typeof str !== 'string') str = String(str ?? '');
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML; // HTML-encoded safe string
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     CHAR COUNTER
+  ───────────────────────────────────────────────────────────── */
+  elInput.addEventListener('input', handleInput);
+
+  function handleInput() {
+    const len = elInput.value.length;
+    elCharNum.textContent = len;
+
+    elCharCount.classList.remove('warn', 'over');
+    if (len > MAX_CHARS) {
+      elCharCount.classList.add('over');
+    } else if (len >= WARN_THRESHOLD) {
+      elCharCount.classList.add('warn');
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     KEYBOARD SHORTCUT — Ctrl+Enter / Cmd+Enter
+  ───────────────────────────────────────────────────────────── */
+  elInput.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      analyse();
+    }
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     BUTTON CLICK
+  ───────────────────────────────────────────────────────────── */
+  elAnalyseBtn.addEventListener('click', analyse);
+
+  /* ─────────────────────────────────────────────────────────────
+     MAIN ANALYSIS FLOW
+  ───────────────────────────────────────────────────────────── */
+  async function analyse() {
+    // Guard: prevent double-submission
+    if (elAnalyseBtn.disabled) return;
+
+    const text = elInput.value.trim();
+
+    /* ── Input validation ── */
+    if (!text) {
+      showError('Please enter some text to analyse.');
+      elInput.focus();
+      return;
+    }
+
+    if (text.length < MIN_CHARS) {
+      showError(`Text is too short. Please enter at least ${MIN_CHARS} characters.`);
+      elInput.focus();
+      return;
+    }
+
+    if (text.length > MAX_CHARS) {
+      showError(`Text exceeds the ${MAX_CHARS}-character limit. Please shorten your input.`);
+      elInput.focus();
+      return;
+    }
+
+    /* ── Reset UI ── */
+    hideError();
+    setVisible(elResults, false);
+    setVisible(elLoading, true);
+    elAnalyseBtn.disabled = true;
+    elAnalyseBtn.setAttribute('aria-busy', 'true');
+
+    try {
+      /* ── Fetch with timeout (10 s) ── */
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 10_000);
+
+      const res = await fetch(API_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text }),
+        signal:  controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        // Surface specific HTTP errors without leaking internals
+        const status = res.status;
+        if (status === 422) {
+          throw new Error('The server could not process the input (validation error).');
+        } else if (status >= 500) {
+          throw new Error('The server encountered an internal error. Please try again later.');
+        } else {
+          throw new Error(`Unexpected server response (HTTP ${status}).`);
+        }
+      }
+
+      /* ── Parse + validate response ── */
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('The server returned an invalid response. Please try again.');
+      }
+
+      validateResponse(data); // throws if malformed
+
+      setVisible(elLoading, false);
+      renderResults(data);
+
+    } catch (err) {
+      setVisible(elLoading, false);
+
+      if (err.name === 'AbortError') {
+        showError('The request timed out. Make sure the backend is running and try again.');
+      } else {
+        // Show the friendly error message; never expose raw JS errors to the UI
+        showError(err.message || 'Could not connect to the analysis API. Make sure the backend is running at http://127.0.0.1:8000');
+      }
+    } finally {
+      elAnalyseBtn.disabled = false;
+      elAnalyseBtn.removeAttribute('aria-busy');
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     RESPONSE VALIDATION
+     Ensures the API payload has the expected shape before
+     any data touches the DOM — mitigates malformed-data XSS.
+  ───────────────────────────────────────────────────────────── */
+  function validateResponse(data) {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Malformed response from server.');
+    }
+
+    if (!VALID_PREDICTIONS.has(data.label)) {
+      throw new Error('Server returned an unrecognised prediction label.');
+    }
+
+    const conf = parseFloat(data.confidence);
+    if (isNaN(conf) || conf < 0 || conf > 100) {
+      throw new Error('Server returned an invalid confidence value.');
+    }
+
+    if (typeof data.text_analyzed !== 'string') {
+      throw new Error('Server response is missing the analysed text field.');
+    }
+
+    if (!data.models || typeof data.models !== 'object') {
+      throw new Error('Server response is missing model predictions.');
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     RENDER RESULTS
+     All dynamic content is inserted as textContent (never innerHTML
+     with raw data) to prevent XSS.
+  ───────────────────────────────────────────────────────────── */
+  function renderResults(data) {
+    const isFake = data.label === 'FAKE';
+    const conf   = Math.min(100, Math.max(0, parseFloat(data.confidence)));
+
+    /* ── Verdict card ── */
+    elVerdictCard.className = 'verdict-card ' + (isFake ? 'fake' : 'real');
+
+    elVerdictText.textContent = data.label;           // safe: textContent only
+    elConfNumber.textContent  = conf.toFixed(1) + '%';
+    elAnalysedTxt.textContent = '\u201C' + data.text_analyzed + '\u201D'; // " … "
+
+    /* ── Confidence bar — accessible progressbar ── */
+    elConfBar.style.width = '0%';
+    elConfBarWrap.setAttribute('aria-valuenow', '0');
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        elConfBar.style.width = conf + '%';
+        elConfBarWrap.setAttribute('aria-valuenow', Math.round(conf));
+      });
+    });
+
+    /* ── Models grid ── */
+    // Clear grid safely
+    while (elModelsGrid.firstChild) {
+      elModelsGrid.removeChild(elModelsGrid.firstChild);
+    }
+
+    // Only render keys that exist in our allowlist
+    const knownKeys = Object.keys(MODEL_LABELS);
+
+    knownKeys.forEach(key => {
+      const m = data.models[key];
+      if (!m) return; // model not present in response — skip
+
+      // Validate each model entry
+      const prediction = VALID_PREDICTIONS.has(m.prediction) ? m.prediction : '—';
+      const c = Math.min(100, Math.max(0, parseFloat(m.confidence) || 0));
+      const isF = prediction === 'FAKE';
+
+      /* Build DOM nodes without innerHTML to avoid XSS */
+      const card = document.createElement('div');
+      card.className = 'model-card';
+      card.setAttribute('role', 'listitem');
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'model-name';
+      nameEl.textContent = MODEL_LABELS[key]; // safe: known label
+
+      const resultEl = document.createElement('div');
+      resultEl.className = 'model-result';
+
+      const verdictEl = document.createElement('div');
+      verdictEl.className = 'model-verdict ' + (isF ? 'fake' : 'real');
+      verdictEl.textContent = prediction;
+      verdictEl.setAttribute('aria-label', `${MODEL_LABELS[key]} prediction: ${prediction}`);
+
+      const confEl = document.createElement('div');
+      confEl.className = 'model-conf';
+      confEl.textContent = c.toFixed(1) + '%';
+
+      resultEl.appendChild(verdictEl);
+      resultEl.appendChild(confEl);
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'model-bar-wrap';
+      barWrap.setAttribute('role', 'progressbar');
+      barWrap.setAttribute('aria-valuemin', '0');
+      barWrap.setAttribute('aria-valuemax', '100');
+      barWrap.setAttribute('aria-valuenow', '0');
+      barWrap.setAttribute('aria-label', `${MODEL_LABELS[key]} confidence: ${c.toFixed(1)}%`);
+
+      const barFill = document.createElement('div');
+      barFill.className = 'model-bar-fill ' + (isF ? 'fake' : 'real');
+      barFill.style.width = '0%';
+
+      barWrap.appendChild(barFill);
+      card.appendChild(nameEl);
+      card.appendChild(resultEl);
+      card.appendChild(barWrap);
+      elModelsGrid.appendChild(card);
+
+      // Animate after paint
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          barFill.style.width = c + '%';
+          barWrap.setAttribute('aria-valuenow', Math.round(c));
+        });
+      });
+    });
+
+    setVisible(elResults, true);
+
+    // Move focus to results for A11y
+    elResults.setAttribute('tabindex', '-1');
+    elResults.focus({ preventScroll: false });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     UI HELPERS
+  ───────────────────────────────────────────────────────────── */
+  function setVisible(el, visible) {
+    if (visible) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  }
+
+  function showError(msg) {
+    // textContent — never innerHTML — for the error message
+    elError.textContent = '// ERROR: ' + msg;
+    elError.classList.add('active');
+    elError.focus?.(); // shift focus to the error for A11y
+  }
+
+  function hideError() {
+    elError.textContent = '';
+    elError.classList.remove('active');
+  }
+</script>
+</body>
+</html>

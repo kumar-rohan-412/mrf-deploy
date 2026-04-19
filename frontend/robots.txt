@@ -1,0 +1,6 @@
+# robots.txt — Misinformation Resilience Framework
+# This tool is restricted to authorised Law Enforcement Agencies only.
+# All web crawlers and bots are disallowed.
+
+User-agent: *
+Disallow: /
